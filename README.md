@@ -12,3 +12,4 @@ Ademas con el calculo de la desviacion estandar y la media movil, se calculan la
 
 Por ultimo, un calculo de la variacion porcetual de la criptomoneda con respecto a su par, en este caso el USD, del dia corriente sobre el dia anterior.
 
+Streamlit Deploy: https://maximobatallan-proyectoindividual3-pi3-vatkos.streamlitapp.com
