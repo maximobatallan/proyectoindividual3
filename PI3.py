@@ -1,10 +1,8 @@
 import pandas as pd
-import plotly.io as pio
+import streamlit as st
+import requests
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-pio.renderers.default='browser'
-import requests
-
 
 
 
@@ -66,42 +64,67 @@ def get_candlestick_plot(
     )
     
     return fig
-    
-if __name__ == '__main__':
-    
-    i = 'BTC'
-    #,'XRP','ETH','AVAX','LTC','BCH','AVAX','SOL','MATIC','FTT'
+
+
+
+ticker = st.sidebar.selectbox(
+    'Ticker to Plot', 
+    options = ['BTC', 'ETH','XRP','AVAX','LTC','BCH','AVAX','SOL','MATIC','FTT']
+)
+
+days_to_plot = st.sidebar.slider(
+    'Days to Plot', 
+    min_value = 1,
+    max_value = 300,
+    value = 120,
+)
+ma1 = st.sidebar.number_input(
+    'Moving Average #1 Length',
+    value = 10,
+    min_value = 1,
+    max_value = 120,
+    step = 1,    
+)
+ma2 = st.sidebar.number_input(
+    'Moving Average #2 Length',
+    value = 20,
+    min_value = 1,
+    max_value = 120,
+    step = 1,    
+)
+
+url = f'https://ftx.com/api/markets/{ticker}/USD/candles?resolution=86400&start=1641006000'
+
+
+x = requests.get(url)
 
 
 
 
-
-    url = f'https://ftx.com/api/markets/{i}/USD/candles?resolution=86400&start=1641006000'
-
-
-    x = requests.get(url)
+resp_dict = x.json()
 
 
+resp_dict= resp_dict['result']
+
+df = pd.DataFrame.from_dict(resp_dict)
 
 
-    resp_dict = x.json()
+new = df["startTime"].str.split("T", n = 1, expand = True)
 
 
-    resp_dict= resp_dict['result']
-
-    df = pd.DataFrame.from_dict(resp_dict)
+df["startTime"]= new[0]
 
 
-    new = df["startTime"].str.split("T", n = 1, expand = True)
+df.drop(columns =["time"], inplace = True)
 
 
-    df["startTime"]= new[0]
+
+df[f'{ma1}_ma'] = df['close'].rolling(ma1).mean()
+df[f'{ma2}_ma'] = df['close'].rolling(ma2).mean()
+df = df[-days_to_plot:]
 
 
-    df.drop(columns =["time"], inplace = True)
-    
-    df['10_ma'] = df['close'].rolling(10).mean()
-    df['20_ma'] = df['close'].rolling(20).mean()
-    
-    fig = get_candlestick_plot(df, 10, 20,i)
-    fig.show()
+st.plotly_chart(
+    get_candlestick_plot(df, ma1, ma2, ticker),
+    use_container_width = True,
+)
