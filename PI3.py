@@ -30,7 +30,7 @@ def get_candlestick_plot(
             high = df['high'],
             low = df['low'],
             close = df['close'],
-            name = 'Candlestick chart'
+            name = 'Grafico de Velas Japonesas'
         ),
         row = 1,
         col = 1,
@@ -49,7 +49,25 @@ def get_candlestick_plot(
     )
     
     fig.add_trace(
-        go.Bar(x = df['startTime'], y = df['volume'], name = 'Volume'),
+        go.Line(x = df['startTime'], y = df['lower_band'], name = f'{ma2} banda baja'),
+        row = 1,
+        col = 1,
+    )
+
+    fig.add_trace(
+        go.Line(x = df['startTime'], y = df['upper_band'], name = f'{ma2} banda alta'),
+        row = 1,
+        col = 1,
+    )    
+
+
+
+
+
+
+
+    fig.add_trace(
+        go.Bar(x = df['startTime'], y = df['volume'], name = 'Volumen'),
         row = 2,
         col = 1,
     )
@@ -68,25 +86,25 @@ def get_candlestick_plot(
 
 
 ticker = st.sidebar.selectbox(
-    'Ticker to Plot', 
+    'Cryptomonedas', 
     options = ['BTC', 'ETH','XRP','AVAX','LTC','BCH','AVAX','SOL','MATIC','FTT']
 )
 
 days_to_plot = st.sidebar.slider(
-    'Days to Plot', 
+    'Cantidad de dias a graficar', 
     min_value = 1,
     max_value = 300,
     value = 120,
 )
 ma1 = st.sidebar.number_input(
-    'Moving Average #1 Length',
+    'Media Movil 1',
     value = 10,
     min_value = 1,
     max_value = 120,
     step = 1,    
 )
 ma2 = st.sidebar.number_input(
-    'Moving Average #2 Length',
+    'Media Movil 2',
     value = 20,
     min_value = 1,
     max_value = 120,
@@ -121,10 +139,27 @@ df.drop(columns =["time"], inplace = True)
 
 df[f'{ma1}_ma'] = df['close'].rolling(ma1).mean()
 df[f'{ma2}_ma'] = df['close'].rolling(ma2).mean()
+df[f'{ma2}_ma'] = df['close'].rolling(ma2).mean()
+df[f'{ma2}_ma'] = df['close'].rolling(ma2).mean()
+df['stddev'] = df['close'].rolling(window=20).std()
+df['lower_band'] = df[f'{ma1}_ma'] - (2 * df['stddev'])
+df['upper_band'] = df[f'{ma1}_ma'] + (2 * df['stddev'])
+
+
+
+df["dif"] = df.close.diff()
+
+df["variacion"] = df.dif/df.close.shift(1)*100
+
 df = df[-days_to_plot:]
+df.to_csv('btcs')
 
 
 st.plotly_chart(
     get_candlestick_plot(df, ma1, ma2, ticker),
     use_container_width = True,
 )
+
+variacion =round(df.iloc[-1, -1],2)
+
+st.write(f'La Variacion Porcentual diaria de {ticker} sobre el par USD es de: {variacion}%')
